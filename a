@@ -1,0 +1,41 @@
+
+name=soone
+
+git push origin $name
+
+#判断是否有错误发生
+iserror(){
+    if [  $? -ne 0 ];then
+        echo "--------------------------------------------------------------------------冲突---------------------------------"$?
+        exit $?
+    else
+        echo "------正常------"
+    fi
+}
+#############提交逻辑############
+echo 您的分支$@
+if [ "$1" ]; then
+    for i in $@
+    do
+        echo "部署"$i"开始"
+        git co $i
+        git pull origin $i
+        git merge $name
+        iserror
+        git push origin $i
+        if [ $i != "master" ]; then
+            git push $i $i
+        fi
+        echo "部署"$i"结束"
+    done
+    echo "您分别部署了"${@}
+else
+  echo "请传入您要部署的分支例如:./auto.sh test master"
+fi
+
+git co $name
+
+
+
+#cd $GIT_WORK_TREE
+# php think min -m all -r all

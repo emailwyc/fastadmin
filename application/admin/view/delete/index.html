@@ -1,0 +1,40 @@
+
+<form id="edit-form" class="form-horizontal" method="" action="">
+    <input data-rule="required" class="form-control" id="t" type="text">
+    <input data-rule="required" class="form-control" id="p" type="text">
+    <input  type="button" id="button" class="btn btn-success btn-embossed" onclick="but()" value="提交">
+</form>
+
+<script src="/assets/js/jquery-2.1.1.min.js"></script>
+<script>
+    function but() {
+
+        var p = document.getElementById('p').value;
+
+        var t= document.getElementById('t').value;
+        $.ajax({
+            url:'/index.php/admin/delete',
+            type:'post',
+            dataType:'json',
+            data:{p:p,t:t},
+            success:function (data) {
+                if (data.code==1){
+
+                    alert('成功');
+                }else if (data.code==0) {
+                    alert('错误')
+                }else {
+                    alert('失败')
+                }
+
+            }
+
+        })
+    }
+
+</script>
+
+
+
+
+

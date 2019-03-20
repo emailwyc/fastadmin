@@ -1,0 +1,218 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scal=1,user-secalable=no"/>
+    <title></title>
+</head>
+<style>
+    body,ul,li,p,h1,h2,h3,h4,h5,h6,hr,font{
+        margin: 0px;
+        padding: 0px;
+        display : inline;
+    }
+    ul,li{
+        list-style: none;
+        float: left;
+    }
+
+    .one{ width:800px;
+        height:700px;
+
+        margin:0 auto;}
+
+    .tou2{
+        width:800px;
+        height:200px;
+        background-color:#f9f9f9;
+    }
+    .zhifu{
+        width:800px;
+        margin-left:50px;
+        margin-top:30px;
+    }
+    .tp{
+        width:90px;
+        height:90px;
+        margin-left:70px;
+    }
+    .jiner{
+        width:100px;
+        height:30px;
+        float:right;
+        margin-right:60px;
+    }
+    .tou3{
+        width:800px;
+        background-color:#fff;
+    }
+    .tou3 ul{
+        width:800px;
+        margin:0 auto;
+    }
+    .tou3 ul li{
+        width:120px;
+        border:#d6d6d6 2px solid;
+        margin-left:70px;
+        margin-top:40px;
+        text-align:center;
+        line-height: 30px;
+        color:#000;
+    }
+    .tou3 ul li:hover{
+        border: deepskyblue 2px solid;
+    }
+
+</style>
+<script src="/assets/js/jquery-1.7.2.min.js"></script>
+<script type="text/javascript">
+    var require = {
+        config: {$config|json_encode}
+    };
+</script>
+<link href="/assets/css/backend.css" rel="stylesheet">
+<script src="/assets/js/require.js" data-main="/assets/js/require-backend.js"></script>
+<script type='text/javascript' src='/assets/js/jquery-2.1.1.min.js'></script>
+<script src="/assets/js/jquery.qrcode.min.js"></script>
+<body style="background:white;">
+<div class="one">
+    <div class="tou2">
+        <li class="zhifu">支付方式：支付宝</li>
+        <img src="/assets/img/charge/123.png"class="tp"><br>
+        <li class="jiner"><strong><h2 id="amount_num">0</h2></strong>元</li>
+
+    </div>
+    <div class="tou3"><br>
+        <strong style="width:60px; height:30px; margin-left:50px;" >充值金额</strong>
+        <ul>
+            {empty name="charges"}
+            暂无数据
+            {else /}
+            {volist name="charges" id="vo"}
+            <a class="divcss5" href="javascript:;">
+                <li>
+                    <span data-type="{$vo.charge_amount}">{$vo.charge_amount}</span>
+                    {if $vo.id==1}
+                        <input id="default_show" type="hidden" value="{$vo.charge_amount}">
+                        <img src="/assets/img/charge/charge_xuanzhong.png" width="25px" height="25px" style="float:right;">
+                    {else/}
+                        <img src="/assets/img/charge/charge_xuanzhong.png" width="25px" height="25px" style="float:right;display:none;">
+                    {/if}
+                </li>
+            </a>
+            {/volist}
+            {/empty}
+        </ul>
+    </div>
+    <div style="float:clear;"></div>
+    <div style="display: inline-block;vertical-align: middle; padding-left: 330px; ">
+
+        <div class="divcss6" id='qrcode' style="width:150px; height:150px; margin-top: 30px;">
+            <img src="/assets/img/qrcode.png" id="fukuanma">
+        </div>
+    </div>
+
+</div>
+<script>
+    //充值
+    $(function() {
+        var st;
+        var amount11 = $("#default_show").val();
+        $("#amount_num").text(amount11);
+        if(amount11 != "undefined" && amount11>0) {
+            $.ajax({
+                url: '/admin.php/index/apply',
+                dataType: 'json',
+                data: {amount: amount11},
+                cache: false,
+                success: function (ret) {
+                    $code = ret.code;
+                    if (1 == $code) {
+                        //alert(JSON.stringify(ret));
+                        // alert(ret.data.url);
+                        //alert(ret.data.orderId);
+                        console.log(ret);
+                        dowanCode(ret.data.url);
+                        timerfun(ret.data.orderId, amount11);
+                    } else {
+                        Toastr.error('下单失败：' + ret.msg);
+                    }
+                }, error: function () {
+                    Toastr.error(__('Network error'));
+                }
+            });
+        }
+
+
+
+        $(".divcss5").click(function () {
+            $(".divcss5 li img").hide();
+            $(this).find("img").show();
+            var amount = $(this).find("span").attr("data-type");
+            $("#amount_num").text(amount);
+            $.ajax({
+                url: '/admin.php/index/apply',
+                dataType: 'json',
+                data: {amount: $(this).find("span").attr("data-type")},
+                cache: false,
+                success: function (ret) {
+                    $code = ret.code;
+                    if (1 == $code) {
+                        //alert(JSON.stringify(ret));
+                        // alert(ret.data.url);
+                        //alert(ret.data.orderId);
+                        console.log(ret);
+                        dowanCode(ret.data.url);
+                        timerfun(ret.data.orderId,amount);
+                    } else {
+                        Toastr.error('下单失败：' + ret.msg);
+                    }
+                }, error: function () {
+                    Toastr.error(__('Network error'));
+                }
+            });
+        });
+        var st;
+        function timerfun(orderId,amount) {
+            var i=0;
+            clearInterval(st);
+            st = setInterval(function(){
+                $.ajax({
+                    url: '/admin.php/index/order_status',
+                    dataType: 'json',
+                    async:false,
+                    data: {"order_id": orderId},
+                    cache: false,
+                    success: function (ret) {
+                        //alert(JSON.stringify(ret));
+                        $code = ret.code;
+                        if (1 == $code) {
+                            clearInterval(st);
+                            Toastr.success('充值成功！');
+                            window.location.href="/admin/index/charge_success/num/"+amount;
+                        }else{
+                            i = i + 1;
+                        }
+                    }, error: function () {
+                        Toastr.error(__('Network error'));
+                    }
+                });
+                if (i >= 30) {
+                    clearInterval(st);
+                }
+
+
+            },3000);
+        }
+
+        function dowanCode(url) {
+            $("#qrcode").empty();
+            jQuery('#qrcode').qrcode({width:150,height:150,text:url});//二维码生成
+        }
+
+    });
+
+</script>
+</body>
+</html>
